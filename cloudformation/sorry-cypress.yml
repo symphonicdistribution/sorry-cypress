@@ -413,6 +413,13 @@ Resources:
             - Name: MONGO_INITDB_ROOT_USERNAME
               Value: sorry-cypress
           Name: mongo
+          MountPoints:
+            - ContainerPath: "/data"  # The path where you want to mount the volume inside the container
+              SourceVolume: "mongo-data"  # The name of the volume
+  Volumes:
+    - Name: "mongo-data"  # The name of the volume
+      Host:
+        SourcePath: "/ecs/mongo-data"  # The path on the host where data should persist
 
         - Image: agoldis/sorry-cypress-director
           Essential: true
