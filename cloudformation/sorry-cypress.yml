@@ -347,6 +347,10 @@ Resources:
   EcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
+      Volumes:
+        - Name: mongo-data
+          Host:
+            SourcePath: /ecs/mongo-data
       Family: sorry-cypress-bundle-cf
       NetworkMode: awsvpc
       Memory: !Ref TaskMemory
@@ -452,10 +456,6 @@ Resources:
             - ContainerName: api
               Condition: START
           Name: dashboard
-    Volumes:
-      - Name: mongo-data
-        Host:
-          SourcePath: /ecs/mongo-data
   EcsService:
     Type: AWS::ECS::Service
     DependsOn:
