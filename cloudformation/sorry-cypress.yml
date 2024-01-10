@@ -344,13 +344,26 @@ Resources:
           - !Ref AWS::StackName
           - logs
       RetentionInDays: 7
+  MyEfsFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: true
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_30_DAYS
+  MyEfsMountTarget:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref MyEfsFileSystem
+      SubnetId: !Ref PublicSubnetOne
+      SecurityGroups:
+        - !Ref FargateContainerSecurityGroup
   EcsTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Volumes:
-        - Name: mongo-data
-          Host:
-            SourcePath: /ecs/mongo-data
+        - Name: efs-volume-mongo
+          EFSVolumeConfiguration:
+            FilesystemId: !Ref MyEfsFileSystem
       Family: sorry-cypress-bundle-cf
       NetworkMode: awsvpc
       Memory: !Ref TaskMemory
@@ -373,10 +386,10 @@ Resources:
               Value: sorry-cypress
             - Name: MONGO_INITDB_ROOT_USERNAME
               Value: sorry-cypress
-          Name: mongo
           MountPoints:
-            - ContainerPath: /data
-              SourceVolume: mongo-data
+            - ContainerPath: /data/db
+              SourceVolume: efs-volume-mongo
+          Name: mongo
         - Image: agoldis/sorry-cypress-director
           Essential: true
           PortMappings:
