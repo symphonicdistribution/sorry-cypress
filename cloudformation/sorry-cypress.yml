@@ -100,6 +100,32 @@ Resources:
         - - !Ref AWS::StackName
           - fargate-sg
       GroupDescription: Access to the Fargate containers
+      SecurityGroupIngress:
+        - CidrIp: 52.23.137.21/32
+          IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          Description: Stitch North America Regions
+        - CidrIp: 52.204.223.208/32
+          IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          Description: Stitch North America Regions
+        - CidrIp: 52.204.228.32/32
+          IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          Description: Stitch North America Regions
+        - CidrIp: 52.204.230.227/32
+          IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          Description: Stitch North America Regions
+        - CidrIp: 172.109.140.42/32
+          IpProtocol: tcp
+          FromPort: 27017
+          ToPort: 27017
+          Description: Allow access from the office NAT
   PublicLoadBalancerSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -110,8 +136,9 @@ Resources:
           - load-balancer-sg
       GroupDescription: Access to the public facing load balancer
       SecurityGroupIngress:
-        - CidrIp: 0.0.0.0/0
+        - CidrIp: 172.109.140.42/32
           IpProtocol: -1
+          Description: Allow access from the office NAT
   EcsSecurityGroupIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -228,6 +255,51 @@ Resources:
             - /api
       ListenerArn: !Ref PublicLoadBalancerListener
       Priority: 2
+  PublicNetworkLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref AWS::StackName
+          - NLB
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+      Subnets:
+        - !Ref PublicSubnetOne
+        - !Ref PublicSubnetTwo
+      SecurityGroups:
+        - !Ref FargateContainerSecurityGroup
+        - !Ref PublicLoadBalancerSG
+      Type: network
+  PublicNetworkLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - TargetGroupArn: !Ref TargetGroupMongo
+          Type: forward
+      LoadBalancerArn: !Ref PublicNetworkLoadBalancer
+      Port: 27017
+      Protocol: TCP
+  TargetGroupMongo:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref AWS::StackName
+          - NLB-Target
+      HealthCheckEnabled: true
+      HealthCheckIntervalSeconds: 15
+      HealthCheckPort: 27017
+      HealthCheckProtocol: TCP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Port: 27017
+      Protocol: TCP
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref VPC
+      TargetType: ip
   ECSRole:
     Type: AWS::IAM::Role
     Properties:
@@ -375,6 +447,8 @@ Resources:
       ContainerDefinitions:
         - Image: mongo:4
           Essential: true
+          PortMappings:
+            - ContainerPort: 27017
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -504,6 +578,9 @@ Resources:
         - ContainerName: dashboard
           ContainerPort: 8080
           TargetGroupArn: !Ref TargetGroupDashboard
+        - ContainerName: mongo
+          ContainerPort: 27017
+          TargetGroupArn: !Ref TargetGroupMongo
 Outputs:
   DirectorURL:
     Description: DirectorURL
