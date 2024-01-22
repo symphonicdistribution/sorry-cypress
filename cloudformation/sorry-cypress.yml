@@ -142,6 +142,15 @@ Resources:
         - CidrIp: 54.196.161.58/32
           IpProtocol: -1
           Description: Allow access from the cypress bastion
+        - CidrIp: 34.195.204.199/32
+          IpProtocol: -1
+          Description: Allow access from (sms-stg-2-ubuntu)
+        - CidrIp: 52.20.247.67/32
+          IpProtocol: -1
+          Description: Allow access from (sms-cie-2-ubuntu)
+        - CidrIp: 54.159.98.167/32
+          IpProtocol: -1
+          Description: Allow access from (qa-app-ubuntu)
   EcsSecurityGroupIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
