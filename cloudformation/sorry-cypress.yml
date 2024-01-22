@@ -139,6 +139,9 @@ Resources:
         - CidrIp: 172.109.140.42/32
           IpProtocol: -1
           Description: Allow access from the office NAT
+        - CidrIp: 54.196.161.58/32
+          IpProtocol: -1
+          Description: Allow access from the cypress bastion
   EcsSecurityGroupIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
@@ -548,6 +551,7 @@ Resources:
     DependsOn:
       - EcsTaskDefinition
       - LoadBalancerRuleAPI
+      - PublicNetworkLoadBalancerListener
     Properties:
       ServiceName: !Join
         - '-'
