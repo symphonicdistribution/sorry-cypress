@@ -151,6 +151,12 @@ Resources:
         - CidrIp: 54.159.98.167/32
           IpProtocol: -1
           Description: Allow access from (qa-app-ubuntu)
+        - CidrIp: 3.84.153.107/32
+          IpProtocol: -1
+          Description: Allow access from (az-devops-agent-ec2)
+        - CidrIp: 54.86.162.25/32
+          IpProtocol: -1
+          Description: Allow access from (az-devops-agent-ec-number2)
   EcsSecurityGroupIngressFromPublicALB:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
