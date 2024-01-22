@@ -431,6 +431,8 @@ Resources:
   MyEfsFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:
+      BackupPolicy:
+        Status: ENABLED
       Encrypted: true
       LifecyclePolicies:
         - TransitionToIA: AFTER_30_DAYS
