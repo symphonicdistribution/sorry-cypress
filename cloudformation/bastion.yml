@@ -1,0 +1,67 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  KeyName:
+    Type: String
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Default: cyp-bastion
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: ID of your VPC
+    Default: vpc-02bea91e50762951c
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: ID of a subnet in your VPC
+    Default: subnet-033c504748116689f
+  EfsFileSystemName:
+    Type: String
+    Description: Name of the EFS file system
+    Default: sorry-cypress-bastion-efs
+Resources:
+  BastionInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-08c40ec9ead489470
+      InstanceType: t3a.medium
+      KeyName: !Ref KeyName
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+      UserData: !Base64
+        Fn::Sub: |
+          #!/bin/bash
+          mkdir /tmp/ssm
+          cd /tmp/ssm
+          wget https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/debian_amd64/amazon-ssm-agent.deb
+          sudo dpkg -i amazon-ssm-agent.deb
+          sudo systemctl enable amazon-ssm-agent
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the bastion host
+      VpcId: !Ref VpcId
+  EfsFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      FileSystemTags:
+        - Key: Name
+          Value: !Ref EfsFileSystemName
+  EfsMountTarget:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EfsFileSystem
+      SubnetId: !Ref SubnetId
+      SecurityGroups:
+        - !Ref EfsSecurityGroup
+  EfsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EFS
+      VpcId: !Ref VpcId
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+Outputs:
+  BastionPublicIp:
+    Description: Public IP address of the Bastion host
+    Value: !GetAtt BastionInstance.PublicIp
